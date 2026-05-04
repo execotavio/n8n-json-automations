@@ -1,0 +1,479 @@
+ {
+  "name": "Linkedin Virals",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Cadastro de Hook",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Hook",
+              "fieldType": "textarea"
+            },
+            {
+              "fieldLabel": "Mecanismo",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Prova Social"
+                  },
+                  {
+                    "option": "Oferta Irresistível"
+                  },
+                  {
+                    "option": "Polêmica"
+                  },
+                  {
+                    "option": "Lista"
+                  },
+                  {
+                    "option": "Relato Pessoal"
+                  },
+                  {
+                    "option": "Passo a Passo"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -320,
+        -192
+      ],
+      "id": "cf6b9cc2-6a11-44b4-8edc-664e1e874196",
+      "name": "On form submission",
+      "webhookId": "c61ae213-2b26-4446-9cdb-8ab1e7175916"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "posts_virais",
+          "mode": "list",
+          "cachedResultName": "posts_virais"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        128,
+        -224
+      ],
+      "id": "005e59a4-ff48-409a-a927-7d2c94a651bf",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "cUfEXMFYAsuH54x6",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+      "typeVersion": 1,
+      "position": [
+        64,
+        0
+      ],
+      "id": "09a4e99a-e049-4b4a-8d09-39ef9c578733",
+      "name": "Embeddings HuggingFace Inference",
+      "retryOnFail": true,
+      "waitBetweenTries": 4000,
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "4GJ9qM6UcRmtBQ7R",
+          "name": "HuggingFaceApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    content: $json[\"Hook\"],\n    metadata: JSON.stringify({\n      hook: $json[\"Hook\"],\n      mecanismo: $json[\"Mecanismo\"],\n    })\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -192
+      ],
+      "id": "9f000704-5b32-4379-869c-d07260d965a9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $('Code in JavaScript').item.json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "metadata",
+                "value": "={{ $('Code in JavaScript').item.json.metadata }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        16
+      ],
+      "id": "1f89a673-098d-4184-afed-4734a7bbba73",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "content": "## Cadastro de Hooks\n",
+        "height": 464,
+        "width": 848,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -368,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "8301920b-b2d8-42b1-9ad7-373bfb620244",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "formTitle": "Gerador de Hooks",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Sobre o que é o seu Lead Magnet?",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Qual o objetivo/promessa principal?",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Qual estratégia de hook você quer usar?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Prova Social"
+                  },
+                  {
+                    "option": "Oferta Irresistível"
+                  },
+                  {
+                    "option": "Polêmica"
+                  },
+                  {
+                    "option": "Lista"
+                  },
+                  {
+                    "option": "Relato Pessoal"
+                  },
+                  {
+                    "option": "Passo a Passo"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -560,
+        240
+      ],
+      "id": "c9191b18-fd69-4c62-bffa-c0a7d6e9c09c",
+      "name": "On form submission1",
+      "webhookId": "a40af68b-c145-4964-9caf-0a31e9ebedcc"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\"Você é um copywriter de elite especializado em LinkedIn e Lead Magnets.\nSua Missão: Gerar 10 hooks (ganchos) ultra-convincentes.\nSua Rotina de Trabalho (Siga rigorosamente):\nPESQUISA: Use a ferramenta de busca (retriever) para encontrar exemplos de hooks no meu banco de dados. Use como termo de busca o tema: '{{ $json[\"Sobre o que é o seu Lead Magnet?\"] }}'.\nANÁLISE: Estude a estrutura, o ritmo e o gatilho psicológico dos exemplos que você encontrou.\nCRIAÇÃO: Escreva 10 novos hooks originais para o tema '{{ $json['Sobre o que é o seu Lead Magnet?'] }}' com o objetivo de '{{ $json['Qual o objetivo/promessa principal?'] }}'.\nESTRATÉGIA: Garanta que todos os 10 hooks sigam a estratégia de: '{{ $json[\"Qual estratégia de hook você quer usar?\"] }}'.\nRegras de Ouro:\nNão invente dados, use a estrutura dos exemplos reais que você buscou.\nUse frases curtas, quebras de linha e emojis discretos.\nFoque em gerar curiosidade e desejo imediato pelo material.\nRetorne apenas a lista numerada dos 10 hooks.\"",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -336,
+        240
+      ],
+      "id": "8aee5fb7-08b5-40f2-9032-db7e704dce7d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://n8n.vlagalabs.cloud/mcp/busca-hooks",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        -192,
+        432
+      ],
+      "id": "ad5133a6-0c45-4258-abe4-ef7829d5b416",
+      "name": "MCP Client"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "\"Esta ferramenta acessa o meu banco de dados privado de posts virais do LinkedIn. Use-a para buscar exemplos reais de hooks, estruturas de escrita e gatilhos mentais que já funcionaram. Você deve fornecer o tema ou a estratégia como termo de busca para receber os melhores exemplos de copy.\"",
+        "tableName": {
+          "__rl": true,
+          "value": "posts_virais",
+          "mode": "list",
+          "cachedResultName": "posts_virais"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        336
+      ],
+      "id": "6874132c-6ae6-4816-894d-29b22f2d3ed8",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "cUfEXMFYAsuH54x6",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "busca-hooks"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        144,
+        240
+      ],
+      "id": "e3c0decc-5735-4a73-9560-2d80a97380e0",
+      "name": "MCP Server Trigger",
+      "webhookId": "5cd65c7b-bce8-47b8-a872-56007ca57e59"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+      "typeVersion": 1,
+      "position": [
+        208,
+        416
+      ],
+      "id": "4fe6460b-3bec-4581-ab0a-0a7a2c411447",
+      "name": "Embeddings HuggingFace Inference1",
+      "credentials": {
+        "huggingFaceApi": {
+          "id": "4GJ9qM6UcRmtBQ7R",
+          "name": "HuggingFaceApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Recupera hooks do banco de dados",
+        "height": 384,
+        "width": 432,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        48,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "750a98c3-583d-4908-8ba6-32d942ec8359",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        416
+      ],
+      "id": "a6117987-bdd3-47ff-a810-7bef163abd2d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "7o8KGuOmnyL58C7v",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "On form submission1": [
+      {
+        "json": {
+          "Sobre o que é o seu Lead Magnet?": "Conteudo com ia",
+          "Qual o objetivo/promessa principal?": "Desenvolvi um tutorial de n8n que ensina a criar um gerador de hooks",
+          "Qual estratégia de hook você quer usar?": "Oferta Irresistível",
+          "submittedAt": "2026-04-02T09:14:05.850-04:00",
+          "formMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings HuggingFace Inference": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "main": [
+        []
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings HuggingFace Inference1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "ed761e90-9332-4bc6-bcfa-91a5bd50c19d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9cb7d613809183e76c75855b2510ceb0f47f253d69f22515aa53642055a5cb16"
+  },
+  "id": "ojvqFVq_DM33o-W-brU_F",
+  "tags": []
+}
