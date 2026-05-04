@@ -1,0 +1,968 @@
+{
+  "name": "Gerador de Leads [Linkedin]",
+  "nodes": [
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        -512
+      ],
+      "id": "37e54e23-30a4-4ae8-8864-54c08e43f192",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b7bec996-d68b-4abd-844b-085733d1c077",
+              "leftValue": "={{ $json.url }}",
+              "rightValue": "linkedin",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1360,
+        -512
+      ],
+      "id": "2b30edf1-8ec8-459b-a4a6-c822131da621",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "25a64994-6ac9-4c38-975f-3a88ca3b3435",
+              "leftValue": "={{ $json.slogan }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "3dec18b2-412d-406a-9358-65ae3d95f225",
+              "leftValue": "={{ $json.description }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        -208
+      ],
+      "id": "f7df30f8-bb1d-40a6-aa06-9acbc3f63756",
+      "name": "If3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        736,
+        -352
+      ],
+      "id": "28fc555d-4648-44fb-9224-a1a32f74284a",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 12
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -656,
+        -192
+      ],
+      "id": "c3a2a999-0911-496b-97bf-9e1fb1eee2d5",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/acts/curious_coder~linkedin-jobs-scraper/runs/last/dataset/items?token=apify_api_YKSpP75cDDEg94K4eHUzzK6ht8iuma2v8GqG",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -480,
+        -192
+      ],
+      "id": "7ba792ac-b570-4b42-87b8-23c7b5e0e51d",
+      "name": "Busca de Vagas"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5fd1b89e-2758-47fe-9883-0d9cf1a34ec7",
+              "leftValue": "={{ $json.companyEmployeesCount }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "ba4b1935-e3d7-49dd-baa8-2a29d3df5e63",
+              "leftValue": "={{ $json.companyEmployeesCount }}",
+              "rightValue": 300,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -320,
+        -192
+      ],
+      "id": "c3a5599f-4a01-4df8-9bfc-6e0594c17623",
+      "name": "ICP?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1cf200f5-8c94-4f05-8ab2-3e0cc60b504d",
+              "name": "job_title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "73d1e04a-c6ca-422f-a53a-8e3dcd3257e4",
+              "name": "empresa",
+              "value": "={{ $json.companyName }}",
+              "type": "string"
+            },
+            {
+              "id": "10114228-06be-4d3e-82fa-7de3e9760950",
+              "name": "linkedin_empresa",
+              "value": "={{ $json.companyLinkedinUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "5bde3f66-2c64-4883-9718-c8092f5c6501",
+              "name": "localização",
+              "value": "={{ $json.location }}",
+              "type": "string"
+            },
+            {
+              "id": "059760ba-a3b2-4048-ab7b-eef32261d546",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "92b8bd52-4ecd-456f-9769-cc0860fc74e5",
+              "name": "url_vaga",
+              "value": "={{ $json.link }}",
+              "type": "string"
+            },
+            {
+              "id": "d32e802b-4e54-4edf-a2ea-edeaf480cf8a",
+              "name": "data_postado",
+              "value": "={{ $json.postedAt }}",
+              "type": "string"
+            },
+            {
+              "id": "df5c9576-d619-4d5c-ae72-828e16e79096",
+              "name": "slogan",
+              "value": "={{ $json.companySlogan }}",
+              "type": "string"
+            },
+            {
+              "id": "774404a5-de2e-4ea1-8822-7af88cf93149",
+              "name": "description",
+              "value": "={{ $json.companyDescription }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        -208
+      ],
+      "id": "8c957a1f-ed7d-4043-9dc4-e263f2ab08d8",
+      "name": "Normalização"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\n\nconst content = `Descrição da Empresa: ${item.description}\nSlogan da Empresa: ${item.slogan}\nNome da Empresa: ${item.empresa}\njob_title: ${item.job_title}\nLinkedIn: ${item.linkedin_empresa}\nLocalização: ${item['localização']}\nID: ${item.id}\nURL da Vaga: ${item.url_vaga}\nData: ${item.data_postado}\n\n# Objetivo\nVocê é o caçador de Head Hunters (Recrutadores Comerciais). Seu objetivo é analisar a descrição, o slogan e o nome da empresa dada a você e repassar as informações das vagas que não estejam postadas por empresas de Recrutamento. Você DEVE conseguir distinguir entre empresas que estão contratando para si (ORIGINAIS) e empresas que estão contratando para outras empresas (RECRUTAMENTO/HEAD HUNTING)\n\n## Operação\nBaseado nas informações recebidas (nome, slogan e descrição), analise se a empresa é uma empresa de recrutamento. \nEmpresas de recrutamento tendem a ter na descrição referências a recursos humanos, além de comumente terem em seu nome as palavras \"RH\", \"Recrutamento\", \"Seleção\", \"Vagas\", \"Consultoria\", ou alguma palavra que utilize ou faça referência a essas citadas.\nExemplos de empresas que devem ser anuladas: Netvagas, RH Ser Consultoria Empresarial, BuscarVagas.\n\n## Output\nEmpresas consideradas RECRUTAMENTO: retorne a url da vaga, o nome da empresa, o job_title como recebido. Indique como ANULADA nos campos slogan e description.\nEmpresas consideradas ORIGINAIS: retorne todas informações (job_title, empresa, linkedin_empresa, localização, id, url_vaga, data_postado, slogan e description) recebidas como indicado no output parser.\n\n# Comentários Finais\n- Seja minucioso e detalhista\n- NÃO RETORNE AS INFORMAÇÕES DE FORMA DIFERENTE DA ORIENTADA\n- NÃO ERRE\n- Não serão todas empresas que deverão ser eliminadas, revise caso necessário`;\n\nreturn {\n  payload: {\n    model: \"route-llm\",\n    messages: [\n      {\n        role: \"user\",\n        content\n      }\n    ]\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        -368
+      ],
+      "id": "4fc25df0-2fe5-47ab-ad6e-658c881068f8",
+      "name": "Prompt [Head Hunter]"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://routellm.abacus.ai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer s2_964405f27674496c90d47bcd8d5aa5ba"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.payload }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        416,
+        -368
+      ],
+      "id": "33316609-4e68-4aa6-980a-8f2b656139a0",
+      "name": "Chamada Abacus"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://routellm.abacus.ai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer s2_964405f27674496c90d47bcd8d5aa5ba"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.payload }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2448,
+        -816
+      ],
+      "id": "c70a3301-6ec4-4b03-8636-5ba1913d072e",
+      "name": "Chamada Abacus2"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 1. Pega a resposta bruta da Abacus\nconst response = $input.item.json.choices[0].message.content;\n\ntry {\n  // 2. Tenta encontrar o JSON dentro da resposta (caso a IA mande texto antes ou depois)\n  const jsonMatch = response.match(/\\{[\\s\\S]*\\}/);\n  const cleanJson = jsonMatch ? jsonMatch[0] : response;\n  \n  // 3. Transforma o texto em objeto JavaScript\n  const parsedData = JSON.parse(cleanJson);\n\n  // 4. Retorna o objeto pronto para o n8n usar como colunas\n  return {\n    json: parsedData\n  };\n} catch (error) {\n  // Caso a IA não retorne um JSON válido, retorna o erro e o texto original para debug\n  return {\n    json: {\n      error: \"Falha ao parsear JSON da IA\",\n      raw_response: response\n    }\n  };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        -368
+      ],
+      "id": "621ff8d1-88dd-475e-9a1d-094d510352ab",
+      "name": "Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "43b3ffb4-4489-4561-8ef1-8d09df7e6bf1",
+              "leftValue": "={{ $json.description }}",
+              "rightValue": "ANULADA",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        -352
+      ],
+      "id": "690005e1-6d46-48af-93f0-08606f80d22e",
+      "name": "Remove Head Hunters"
+    },
+    {
+      "parameters": {
+        "query": "=Head de Vendas {{ $json.empresa }} LinkedIn\nGestor de Vendas {{ $json.empresa }} LinkedIn\nDiretor Comercial {{ $json.empresa }} LinkedIn\nGerente de Vendas {{ $json.empresa }} LinkedIn\nDiretor de Vendas {{ $json.empresa }} LinkedIn",
+        "options": {
+          "search_depth": "advanced",
+          "max_results": 3,
+          "include_domains": [
+            "https://www.linkedin.com/"
+          ]
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        -512
+      ],
+      "id": "9bbd52f5-ffbe-44a6-8103-bae771e10a81",
+      "name": "Pesquisa Funcionários",
+      "credentials": {
+        "tavilyApi": {
+          "id": "WlL2cfdVv5cYEim2",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9b4a3b6f-ae53-4e1a-a5d2-f15b4e02bee3",
+              "leftValue": "={{ $json.url }}",
+              "rightValue": "/in/",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1472,
+        -672
+      ],
+      "id": "2e52cb2d-bae1-4536-b2e1-f5fe61d4d505",
+      "name": "Remove sujeira"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0036de9a-7083-4f9c-8825-ed4e36429ea8",
+              "name": "url",
+              "value": "={{ $json.url.replace('br.', 'www.') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1600,
+        -816
+      ],
+      "id": "5ee85f03-615a-40d3-9ef5-2619980542f4",
+      "name": "Corrige URL"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/bRhFQxugvkhDrzp2e/run-sync-get-dataset-items",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer apify_api_YKSpP75cDDEg94K4eHUzzK6ht8iuma2v8GqG"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"linkedin_url\": \"{{ $json.url }}\"\n}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        -816
+      ],
+      "id": "3c78a8d5-6360-47e9-9c4f-c24c7cb4c435",
+      "name": "Scrapping de Perfis",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const listaCompleta = $('Lista unificada de pessoas').first().json.lista_completa;\nconst empresas_alvo = $input.first().json.empresas;\n\nconst pessoas = listaCompleta.map((item, idx) => {\n  const data = item.data || {};\n  const experiences = data.experiences || [];\n  \n  // Pega a experiência atual\n  const expAtual = experiences.find(e => e.is_current === true);\n  \n  return {\n    id: idx,\n    nome: data.full_name || data.first_name || '',\n    empresa_atual: expAtual?.company || '',\n    cargo_atual: expAtual?.title || '',\n    url_perfil_linkedin: data.linkedin_url || ''\n  };\n});\n\nconst system = `Você é um validador de dados B2B. Confirme se a empresa_atual da pessoa está na lista de empresas_alvo. Seja rigoroso.`;\n\nconst user = `\nDADOS:\n${JSON.stringify({ empresas_alvo, pessoas })}\n\nRetorne APENAS JSON puro:\n{\n  \"aprovados\": [{ \"id\": number, \"nome\": string, \"empresa_atual\": string, \"empresa_match\": string }],\n  \"rejeitados\": [{ \"id\": number, \"motivo\": string }]\n}\n`.trim();\n\nreturn {\n  json: {\n    payload: {\n      model: \"route-llm\",\n      temperature: 0.1,\n      messages: [\n        { role: \"system\", content: system },\n        { role: \"user\", content: user }\n      ]\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        -816
+      ],
+      "id": "e1bbfefb-60e6-4c7a-824e-6f44707ab9f4",
+      "name": "Prompt [Check de empresas]"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega a resposta da IA\nconst content = $input.first().json.choices[0].message.content;\n\n// Remove markdown se vier com ```json\nconst cleaned = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\nconst resultado = JSON.parse(cleaned);\n\n// Pega a lista completa de pessoas do nó anterior\nconst listaCompleta = $('Lista unificada de pessoas').first().json.lista_completa;\n\n// Para cada aprovado, busca os dados completos do perfil\nconst aprovados = resultado.aprovados.map(aprovado => {\n  const perfil = listaCompleta[aprovado.id];\n  const data = perfil?.data || {};\n  \n  return {\n    json: {\n      nome: data.full_name || data.first_name || aprovado.nome || '',\n      cargo: aprovado.cargo_atual || data.headline || '',\n      email: data.email || '',\n      telefone: data.phone || '',\n      empresa: aprovado.empresa_match || '',\n      sobre_empresa: data.company_description || '', \n      url_empresa: data.company_linkedin_url || '',\n      url_perfil_linkedin: data.linkedin_url || aprovado.url_perfil_linkedin || ''\n    }\n  };\n});\n\nreturn aprovados;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2624,
+        -816
+      ],
+      "id": "a5f16226-f6d8-47f7-9b61-8fd284292689",
+      "name": "Parser2"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "12LuYQUVEXfhySwtiHInpOyiVpYRGshKHVbz562Jqado",
+          "mode": "list",
+          "cachedResultName": "Gerador de Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12LuYQUVEXfhySwtiHInpOyiVpYRGshKHVbz562Jqado/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Vagas [SDR]",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12LuYQUVEXfhySwtiHInpOyiVpYRGshKHVbz562Jqado/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Cargo": "={{ $json.cargo }}",
+            "Nome": "={{ $json.nome }}",
+            "E-mail": "={{ $json.email }}",
+            "Telefone": "={{ $json.telefone }}",
+            "Empresa": "={{ $json.empresa }}",
+            "Sobre a empresa": "={{ $json.sobre_empresa }}",
+            "URL empresa": "={{ $json.url_empresa }}",
+            "URL Perfil Linkedin": "={{ $json.url_perfil_linkedin }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Nome",
+              "displayName": "Nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Cargo",
+              "displayName": "Cargo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "E-mail",
+              "displayName": "E-mail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Telefone",
+              "displayName": "Telefone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Empresa",
+              "displayName": "Empresa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sobre a empresa",
+              "displayName": "Sobre a empresa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "URL empresa",
+              "displayName": "URL empresa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "URL Perfil Linkedin",
+              "displayName": "URL Perfil Linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Conexão no Linkedin?",
+              "displayName": "Conexão no Linkedin?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Mensagem Inicial",
+              "displayName": "Mensagem Inicial",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Data contato",
+              "displayName": "Data contato",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Resposta 1 contato?",
+              "displayName": "Resposta 1 contato?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reunião Marcada?",
+              "displayName": "Reunião Marcada?",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2816,
+        -816
+      ],
+      "id": "e3ddb067-4062-4a37-a3c1-730858dae617",
+      "name": "Enriquece planilha",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iMBWGLDhhWvtFhXt",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const todosItens = $('Remove Head Hunters').all();\nconst empresasSet = new Set();\n\nfor (const item of todosItens) {\n  const row = item.json;\n  const nomeEmpresa = row.empresa || row.nome_da_empresa;\n  if (nomeEmpresa && !row.error) {\n    empresasSet.add(nomeEmpresa.trim());\n  }\n}\n\nreturn [{ json: { empresas: Array.from(empresasSet) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        -816
+      ],
+      "id": "1caf055f-06fc-4555-ac06-cf6dc9f2f509",
+      "name": "Lista de empresas"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pegar todos os itens que chegaram a este node (mesmo se vierem de merges)\nconst todos = $input.all().map(i => i.json);\n\n// Retornar UM item apenas contendo TODOS os dados\nreturn [\n  {\n    json: {\n      lista_completa: todos\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1936,
+        -816
+      ],
+      "id": "9d3cf545-4978-4da3-987f-5bac1a6870df",
+      "name": "Lista unificada de pessoas"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Remove sujeira",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Prompt [Head Hunter]",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Remove Head Hunters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Busca de Vagas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca de Vagas": {
+      "main": [
+        [
+          {
+            "node": "ICP?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ICP?": {
+      "main": [
+        [
+          {
+            "node": "Normalização",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalização": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt [Head Hunter]": {
+      "main": [
+        [
+          {
+            "node": "Chamada Abacus",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamada Abacus": {
+      "main": [
+        [
+          {
+            "node": "Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamada Abacus2": {
+      "main": [
+        [
+          {
+            "node": "Parser2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Head Hunters": {
+      "main": [
+        [
+          {
+            "node": "Pesquisa Funcionários",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pesquisa Funcionários": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove sujeira": {
+      "main": [
+        [
+          {
+            "node": "Corrige URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Corrige URL": {
+      "main": [
+        [
+          {
+            "node": "Scrapping de Perfis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrapping de Perfis": {
+      "main": [
+        [
+          {
+            "node": "Lista unificada de pessoas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt [Check de empresas]": {
+      "main": [
+        [
+          {
+            "node": "Chamada Abacus2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser2": {
+      "main": [
+        [
+          {
+            "node": "Enriquece planilha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lista de empresas": {
+      "main": [
+        [
+          {
+            "node": "Prompt [Check de empresas]",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lista unificada de pessoas": {
+      "main": [
+        [
+          {
+            "node": "Lista de empresas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "timezone": "America/Sao_Paulo"
+  },
+  "versionId": "2bb44f48-8326-47a1-9f8a-64012b87da5f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9cb7d613809183e76c75855b2510ceb0f47f253d69f22515aa53642055a5cb16"
+  },
+  "id": "qYgYmlkseXfpcBpxPlHjV",
+  "tags": []
+}
