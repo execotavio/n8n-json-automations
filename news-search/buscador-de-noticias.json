@@ -1,0 +1,831 @@
+{
+  "name": "Buscador de noticias",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -368,
+        -48
+      ],
+      "id": "b3fa7ff1-fdf1-4dcd-aba9-64a8137a0f23",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"feeds\": [\n    \"https://ge.globo.com/Esportes/Rss/0,,AS0-9645,00.xml\",\n\"http://rss.esporte.uol.com.br/ultimas/index.xml\",\n\"http://rss.esporte.uol.com.br/f1/ultimas-noticias/index.xml\",\n\"http://rss.esporte.uol.com.br/futebol/ultimas/index.xml\",\n\"https://www.espn.com.br/rss\",\n\"https://g1.globo.com/rss/g1/pop-arte/\",\n\"https://adorocinema3.webnode.page/rss/noticias.xml\",\n\"https://ignbrasilgames.webnode.com.br/rss/all.xml\",    \n\"https://www.tenhomaisdiscosqueamigos.com/feed/\",\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        -48
+      ],
+      "id": "f7dec80e-8ae3-4ffe-bd23-8a29809dd38f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        256,
+        -48
+      ],
+      "id": "aa7086ee-a6ac-498c-b1fc-6382e13c9340",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": " feeds",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        48,
+        -48
+      ],
+      "id": "955ef998-2f8c-4d60-8c57-dfdb70be3787",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.feeds }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        512,
+        64
+      ],
+      "id": "428a4787-7be0-4cb4-9970-97af5b07445e",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst resultado = [];\n\nfor (const item of items) {\n  const xml = item.json.data;\n  const categoria = item.json.categoria || 'geral';\n\n  // Extrai itens do RSS com regex simples\n  const itemRegex = /<item>([\\s\\S]*?)<\\/item>/g;\n  let match;\n\n  while ((match = itemRegex.exec(xml)) !== null) {\n    const bloco = match[1];\n\n    const titulo = (bloco.match(/<title><!\\[CDATA\\[(.*?)\\]\\]><\\/title>/) || bloco.match(/<title>(.*?)<\\/title>/))?.[1] || '';\n    const link = (bloco.match(/<link>(.*?)<\\/link>/) || [])[1] || '';\n    const descricao = (bloco.match(/<description><!\\[CDATA\\[(.*?)\\]\\]><\\/description>/) || bloco.match(/<description>(.*?)<\\/description>/))?.[1] || '';\n    const pubDate = (bloco.match(/<pubDate>(.*?)<\\/pubDate>/) || [])[1] || '';\n\n    if (!link) continue;\n\n    resultado.push({\n      json: {\n        titulo: titulo.trim(),\n        link: link.trim(),\n        descricao: descricao.trim(),\n        pubDate: pubDate.trim(),\n        categoria\n      }\n    });\n  }\n}\n\nreturn resultado;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        -144
+      ],
+      "id": "12e1f051-341e-4999-b46f-3998e81d53d2",
+      "name": "Noticias recebidas"
+    },
+    {
+      "parameters": {
+        "jsCode": "const noticias = $input.first().json.noticias;\n\nconst titulos = noticias.map(n => ({ id: n.id, titulo: n.titulo }));\n\nreturn [{ json: { titulos, noticias } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        -160
+      ],
+      "id": "9c053942-ec04-4c05-a058-bd78e9624b43",
+      "name": "Titulos"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { titulos, noticias } = $input.first().json;\n\nreturn {\n  json: {\n    model: \"gpt-4o-mini\",\n    messages: [\n      {\n        role: \"system\",\n        content: \"Você é um classificador de notícias brasileiras. Classifique cada título em uma das categorias: se esportes a categoria é 9 , se musica a categoria é 5, se filmes_series a categoria é 2, se games a categoria é 6 ou descartar. \\n\\nRegras:\\n- esportes: futebol, F1, tênis, vôlei, basquete, campeonatos esportivos\\n- musica: artistas, shows, álbuns, indústria musical\\n- filmes_series: streaming, cinema, séries, premiações\\n- games: videogames, consoles, e-sports\\n- descartar: política, economia, notícias locais, celebridades sem relevância\\n\\nRetorne APENAS um JSON válido no formato:\\n[{\\\"id\\\": 0, \\\"categoria\\\": \\\"esportes\\\"}]\"\n      },\n      {\n        role: \"user\",\n        content: JSON.stringify(titulos)\n      }\n    ],\n    _noticias: noticias\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        -160
+      ],
+      "id": "45a71f97-fda4-4847-9758-8ec24b263783",
+      "name": "Montar JSON para LLM"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://routellm.abacus.ai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer s2_964405f27674496c90d47bcd8d5aa5ba"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1968,
+        -144
+      ],
+      "id": "dbaa17d0-e22d-4238-bb21-b68408c08f80",
+      "name": "Chamada ABACUS"
+    },
+    {
+      "parameters": {
+        "jsCode": "let rawContent = $input.first().json.choices[0].message.content;\nrawContent = rawContent.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\nconst classificacao = JSON.parse(rawContent);\n\nconst noticiasOriginais = $('Montar JSON para LLM').first().json._noticias;\n\nconst LIMITE = 10;\nconst contadores = { esportes: 0, musica: 0, filmes_series: 0, games: 0 };\nconst resultado = [];\n\nfor (const item of classificacao) {\n  if (item.categoria === 'descartar') continue;\n  if (contadores[item.categoria] >= LIMITE) continue;\n\n  const noticia = noticiasOriginais.find(n => n.id === item.id);\n  if (!noticia) continue;\n\n  resultado.push({ ...noticia, categoria: item.categoria });\n  contadores[item.categoria]++;\n}\n\nreturn resultado.map(n => ({ json: n }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2176,
+        -144
+      ],
+      "id": "e4acdd70-d8ab-496f-9e65-e774a6eba9bd",
+      "name": "Reconecta noticia"
+    },
+    {
+      "parameters": {
+        "url": "=https://r.jina.ai/{{ $json.link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3232,
+        -128
+      ],
+      "id": "d7a8de9b-0507-4d9b-830a-d8b8f3b80509",
+      "name": "Busca no Jina"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1f586427-af87-458a-8be1-cd0b114744d9",
+              "leftValue": "={{ $json.total }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1312,
+        -112
+      ],
+      "id": "da338dd8-f7c4-46b1-b658-3289ed24c385",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const processados = $('Google Sheets').all().map(i => i.json.url_noticia);\nconst processadosSet = new Set(processados);\n\nconst noticias = $('Noticias recebidas').all();\n\nconst novas = [];\nnoticias.forEach((item, index) => {\n  if (!processadosSet.has(item.json.link)) {\n    novas.push({ id: index, ...item.json });\n  }\n});\n\nreturn [{ json: { noticias: novas, total: novas.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -144
+      ],
+      "id": "40e5c699-addf-4f41-9be9-4f904696318e",
+      "name": "Filtra duplicadas"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1tvp3GihNVfLd0My_JWadknGj3qCvP0uc4HF595YTR7g",
+          "mode": "list",
+          "cachedResultName": "Noticias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tvp3GihNVfLd0My_JWadknGj3qCvP0uc4HF595YTR7g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Página1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tvp3GihNVfLd0My_JWadknGj3qCvP0uc4HF595YTR7g/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        912,
+        -144
+      ],
+      "id": "422021ec-6293-4f22-9d1d-512f4eb84593",
+      "name": "Google Sheets",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iMBWGLDhhWvtFhXt",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2368,
+        -288
+      ],
+      "id": "ce564d97-b40e-42b8-a73e-2697497fc66f",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2608,
+        -128
+      ],
+      "id": "58718e32-11ef-43ac-9520-354420da58cb",
+      "name": "Wait",
+      "webhookId": "b3b4b5ab-9b0f-45f4-8161-b12dc85ad4bf"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    model: \"route-llm\",\n    messages: [\n      {\n        role: \"system\",\n        content: `Você é um redator especialista em SEO do portal de entretenimento \"Portal Delirando\".\n\nReescreva a notícia seguindo estas regras:\n\n- Mantenha fidelidade total aos fatos (NÃO invente informações)\n- Use linguagem envolvente, clara e natural em português brasileiro\n- Estruture o texto para SEO e leitura escaneável\n\nREGRAS DE SEO:\n- Crie um título chamativo (máx. 70 caracteres)\n- Use a palavra-chave principal no título e no primeiro parágrafo\n- Escreva um subtítulo logo após o título\n- Divida o texto em pelo menos 3 parágrafos curtos\n- Evite blocos longos de texto\n- Use linguagem direta e ativa\n\nFORMATO DE SAÍDA:\nRetorne APENAS um JSON válido com:\n{\n  \"titulo\": \"...\",\n  \"conteudo\": \"<p>parágrafo 1</p><p>parágrafo 2</p><p>parágrafo 3</p>\"\n}`\n      },\n      {\n        role: \"user\",\n        content: `Título: ${$('Wait').item.json.titulo}\n\nNoticia: ${$json.data}\n\nCategoria: ${$('Wait').item.json.categoria}`\n      }\n    ],\n    _link_original: $('Wait').item.json.link,\n    _categoria: $('Wait').item.json.categoria,\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3392,
+        -128
+      ],
+      "id": "d714c096-d5f4-455d-a772-72f792fe1072",
+      "name": "Reescreve a noticia"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://routellm.abacus.ai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer s2_964405f27674496c90d47bcd8d5aa5ba"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3584,
+        -128
+      ],
+      "id": "03ec3054-85e6-4b6b-bc05-a7b41122ec20",
+      "name": "Chamada ABACUS1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://portaldelirando.com.br/wp-json/wp/v2/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"title\": \"={{ $json.titulo }}\",\n  \"content\": \"={{ $json.conteudo }}\",\n  \"status\": \"draft\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3968,
+        -128
+      ],
+      "id": "56d300ad-344c-415a-8f94-61b468940d94",
+      "name": "Postagem",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "ZuRkrl2hQgCUlclv",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "1 0 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        -336
+      ],
+      "id": "df050c5f-d780-412c-9b75-61755eea36c2",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "value": "1tvp3GihNVfLd0My_JWadknGj3qCvP0uc4HF595YTR7g",
+          "mode": "list",
+          "cachedResultName": "Noticias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tvp3GihNVfLd0My_JWadknGj3qCvP0uc4HF595YTR7g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Página1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tvp3GihNVfLd0My_JWadknGj3qCvP0uc4HF595YTR7g/edit#gid=0"
+        },
+        "clear": "specificRange",
+        "range": "A2:Z10000"
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -144,
+        -336
+      ],
+      "id": "614c0cb3-f9b6-467c-a1cc-6c2d079b32e3",
+      "name": "Clear sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iMBWGLDhhWvtFhXt",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Limpa a planilha 00:01\n",
+        "height": 272,
+        "width": 512,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -400,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "a1682381-2592-4edf-85cf-4d108cdb0c25",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1tvp3GihNVfLd0My_JWadknGj3qCvP0uc4HF595YTR7g",
+          "mode": "list",
+          "cachedResultName": "Noticias",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tvp3GihNVfLd0My_JWadknGj3qCvP0uc4HF595YTR7g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Página1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tvp3GihNVfLd0My_JWadknGj3qCvP0uc4HF595YTR7g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "url_noticia": "={{ $('Code in JavaScript').item.json.link }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "url_noticia",
+              "displayName": "url_noticia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "data_processamento",
+              "displayName": "data_processamento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4160,
+        -128
+      ],
+      "id": "3b53632f-d859-4904-aa8d-a0bdbc782e73",
+      "name": "adiciona noticia",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iMBWGLDhhWvtFhXt",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let rawContent = $input.first().json.choices[0].message.content;\n\nrawContent = rawContent.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n\nconst parsed = JSON.parse(rawContent);\n\nconst linkOriginal = ($('Wait').first().json.link || '').replace(/\"/g, '&quot;');\n\nreturn [{\n  json: {\n    titulo: parsed.titulo,\n    conteudo: parsed.conteudo + `<hr><p><strong>Fonte original:</strong> <a href=\"${linkOriginal}\">${linkOriginal}</a></p>`,\n    categoria: parsed.categoria || $('Wait').first().json.categoria,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3760,
+        -128
+      ],
+      "id": "15e79b22-2817-403a-9153-3d77edafc33f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "## Busca Notícias",
+        "height": 448,
+        "width": 944
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -224,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "03045e13-17f8-4909-8a4a-9d1ad67649e1",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "fromEmail": "vlagalabs@gmail.com",
+        "toEmail": "atomotavio@gmail.com",
+        "subject": "Novos posts no portal Delirando!",
+        "emailFormat": "text",
+        "text": "Confira agora em https://portaldelirando.com.br",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2576,
+        -384
+      ],
+      "id": "c77285f5-ec89-444a-9da5-e755e6f4d3e5",
+      "name": "Send email",
+      "webhookId": "fe9c4f3c-1cf1-4ab8-9076-2c8c7f291040",
+      "credentials": {
+        "smtp": {
+          "id": "X48i8kzgDKnJhp0e",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Noticias recebidas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Noticias recebidas": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Titulos": {
+      "main": [
+        [
+          {
+            "node": "Montar JSON para LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar JSON para LLM": {
+      "main": [
+        [
+          {
+            "node": "Chamada ABACUS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamada ABACUS": {
+      "main": [
+        [
+          {
+            "node": "Reconecta noticia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reconecta noticia": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca no Jina": {
+      "main": [
+        [
+          {
+            "node": "Reescreve a noticia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Titulos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtra duplicadas": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Filtra duplicadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Busca no Jina",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reescreve a noticia": {
+      "main": [
+        [
+          {
+            "node": "Chamada ABACUS1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamada ABACUS1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postagem": {
+      "main": [
+        [
+          {
+            "node": "adiciona noticia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Clear sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "adiciona noticia": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Postagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "c6e88419-23f5-4638-b268-19158d74e899",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9cb7d613809183e76c75855b2510ceb0f47f253d69f22515aa53642055a5cb16"
+  },
+  "id": "WRRKNcYc0mD8D2qJ-8Xa2",
+  "tags": []
+}
