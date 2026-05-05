@@ -10,6 +10,7 @@ O fluxo recebe um tema ou conteúdo inicial, processa as informações através 
 - **OpenAI (GPT-4o)**: Motor de IA para reescrita e análise de tom de voz.
 - **Sticky Notes & No-Ops Nodes**: Organização visual e documentação interna do workflow.
 - **HTTP Request / OpenAI Node**: Integração direta com modelos de linguagem avançados.
+- **RAG**: Busca dentro de um banco de dados proprio exemplos de posts que ja viralizaram para usar de estrutura basica.
 
 ## 🧠 Lógica de Automação
 O diferencial deste workflow é o **System Prompt** estruturado:
